@@ -1,0 +1,135 @@
+﻿@page "/players/edit/{id:int?}"
+@using Microsoft.AspNetCore.Authorization
+@using KickStat.Models.Players
+@using KickStat.App.Framework.KickStatApi
+@attribute [Authorize]
+@inject KickStatPlayersApiClient PlayersApiClient
+@inject NavigationManager NavigationManager;
+@inject IJSRuntime JsRuntime
+
+<MudCard Class="mt-8">
+    <EditForm Model="@EditingItem" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <MudCardContent>
+
+            <MudGrid Justify="Justify.Center">
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="EditingItem.FullName" For="() => EditingItem.FullName" Label="ФИО" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="EditingItem.BirthYear" For="() => EditingItem.BirthYear" InputType="InputType.Number" Label="Год рождения" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="EditingItem.Description" For="() => EditingItem.Description" Label="Описание" />
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+
+
+        @if (errors.Any())
+        {
+            <MudCardContent>
+                @foreach (var error in errors)
+                {
+                    <MudText Color="@Color.Error">
+                        @error
+                    </MudText>
+                }
+            </MudCardContent>
+        }
+      
+
+        <MudCardActions>
+            <MudHidden  Breakpoint="Breakpoint.SmAndDown">
+                <MudSpacer />
+                <MudButton OnClick="GoBack" Color="Color.Secondary">Отменить</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Disabled="@(IsSaving || IsLoading)" Color="Color.Primary">
+                    @if (IsSaving)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudText>Сохранить</MudText>
+                    }
+                </MudButton>
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                <MudButton OnClick="GoBack" Color="Color.Secondary" FullWidth="true">Отменить</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Disabled="@(IsSaving || IsLoading)" FullWidth="true" Color="Color.Primary">
+                    @if (IsSaving)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudText>Сохранить</MudText>
+                    }
+                </MudButton>
+            </MudHidden>
+        </MudCardActions>
+    </EditForm>
+</MudCard>
+
+
+@code {
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsLoading = false;
+
+    private bool IsSaving = false;
+
+    private PlayerModel EditingItem  = new();
+    List<string?> errors = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id is null or <= 1)
+            return;
+
+        try
+        {
+            IsLoading = true;
+            EditingItem = await PlayersApiClient.Get(Id.Value);
+        }
+        catch (Exception e)
+        {
+            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        try
+        {
+            IsSaving = true;
+            EditingItem = await PlayersApiClient.Save(EditingItem);
+            NavigationManager.NavigateTo("/players");
+        }
+        catch (Exception e)
+        {
+            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+
+    }
+
+    private async Task GoBack()
+    {
+        await JsRuntime.InvokeVoidAsync("history.back");
+    }
+
+
+}

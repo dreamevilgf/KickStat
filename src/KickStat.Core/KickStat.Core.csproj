@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>KickStat</RootNamespace>
+
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version>1.0.0</Version>
+        <PackageId>KickStat.Core</PackageId>
+
+        <AssemblyTitle>KickStat applications core package</AssemblyTitle>
+        <Authors>KickStat</Authors>
+        <Company>KickStat</Company>
+        <Copyright>KickStat 2023</Copyright>
+        <Description>KickStat applications core package</Description>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <NoWarn>CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Macross.Json.Extensions" Version="3.0.0" />
+    </ItemGroup>
+
+
+</Project>

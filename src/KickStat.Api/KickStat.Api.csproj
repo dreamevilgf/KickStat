@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <AssemblyName>KickStat.UI.SiteApi</AssemblyName>
+        <RootNamespace>KickStat.UI.SiteApi</RootNamespace>
+        
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version>1.0.0</Version>
+        <PackageId>KickStat.UI.SiteApi</PackageId>
+
+        <AssemblyTitle>KickStat application site package</AssemblyTitle>
+        <Authors>Fargos</Authors>
+        <Company>Fargos</Company>
+        <Copyright>Fargos 2023</Copyright>
+        <Description>KickStat application site package</Description>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <NoWarn>CS1591</NoWarn>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <SatelliteResourceLanguages>en-US;en;ru;ru-RU</SatelliteResourceLanguages> <!--Disable to add localized extra folders De-de, Ch-cn etc-->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MethodTimer.Fody" Version="3.2.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="NLog.Schema" Version="5.1.1" />
+        <PackageReference Include="NLog.Web.AspNetCore" Version="5.1.5" />
+        <PackageReference Include="ClosedXML" Version="0.97.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\KickStat.Core\KickStat.Core.csproj" />
+      <ProjectReference Include="..\KickStat.Data.Core\KickStat.Data.Core.csproj" />
+      <ProjectReference Include="..\KickStat.Data.Main\KickStat.Data.Main.csproj" />
+      <ProjectReference Include="..\KickStat.Models\KickStat.Models.csproj" />
+      <ProjectReference Include="..\KickStat.Services\KickStat.Services.csproj" />
+      <ProjectReference Include="..\KickStat.Web.Framework\KickStat.Web.Framework.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Framework\Helpers\" />
+    </ItemGroup>
+
+
+</Project>

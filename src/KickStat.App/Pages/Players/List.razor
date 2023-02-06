@@ -1,0 +1,78 @@
+﻿@page "/players"
+@using Microsoft.AspNetCore.Authorization
+@using KickStat.Models.Players
+@using KickStat.App.Framework.KickStatApi
+@attribute [Authorize]
+@inject KickStatPlayersApiClient PlayersApiClient
+
+<MudGrid Class="pt-8" Justify="Justify.Center">
+    <MudItem xs="12">
+        <MudButton Color="Color.Primary" Href="/players/edit">Создать</MudButton>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper>
+            <MudTable ServerData="@(new Func<TableState, Task<TableData<PlayerModel>>>(ServerReload))" @ref="Table">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Игроки</MudText>
+                    <MudSpacer/>
+                    <MudTextField ValueChanged="@(OnSearch)" T="string" Placeholder="Поиск"
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>
+                        <MudTableSortLabel SortLabel="FullName" T="PlayerModel">ФИО</MudTableSortLabel>
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="FullName">@context.FullName</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>Ничего не удалось найти</NoRecordsContent>
+                <LoadingContent>Загрузка...</LoadingContent>
+                <PagerContent>
+                    <MudTablePager/>
+                </PagerContent>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+
+@code {
+    private PlayerListRequest Request = new();
+    private MudTable<PlayerModel> Table;
+
+    private async Task<TableData<PlayerModel>> ServerReload(TableState state)
+    {
+        try
+        {
+
+            Request.Sort.OrderBy = state.SortLabel == "FullName" ? PlayerSortOptions.FullName : PlayerSortOptions.Id;
+            if (Request.Sort.OrderBy != PlayerSortOptions.Id)
+                Request.Sort.IsAscending = state.SortDirection == SortDirection.Ascending;
+            else
+                Request.Sort.IsAscending = true;
+
+            Request.Filter.Skip = state.Page * state.PageSize;
+            Request.Filter.Take = state.PageSize;
+
+            var result = await PlayersApiClient.List(Request);
+
+            return new TableData<PlayerModel>() { TotalItems = result.TotalCount ?? 0, Items = result.Result?.ToList() ?? new List<PlayerModel>() };
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+        }
+
+        return new TableData<PlayerModel>() { TotalItems = 0, Items = new List<PlayerModel>() };
+    }
+
+    private void OnSearch(string text)
+    {
+        Request.Filter.Query = text;
+        Table.ReloadServerData();
+    }
+
+
+}

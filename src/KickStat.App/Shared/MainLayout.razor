@@ -1,0 +1,59 @@
+﻿@inherits LayoutComponentBase
+
+
+
+<MudThemeProvider Theme="myTheme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Style="height: 100%">
+    <MudAppBar Elevation="0">
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Dark" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())"
+            />
+        </MudHidden>
+        <MudImage Src="https://storage.yandexcloud.net/footstat/images/logo/icon.svg" Width="32" Height="32"></MudImage>
+        <MudText Color="Color.Dark" Typo="Typo.h6" Class="ml-2" Style="font-weight: bold">KickStat</MudText>
+        <MudSpacer/>
+        <MudMenu Icon="fas fa-user-circle">
+            <MudMenuItem>Выйти</MudMenuItem>
+        </MudMenu>
+
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Docked">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Style="background:#F9F9F9">
+        <MudContainer MaxWidth="MaxWidth.Large">
+            @Body
+        </MudContainer>
+
+    </MudMainContent>
+</MudLayout>
+
+@code
+{
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private MudTheme myTheme = new()
+        {
+            Palette = new Palette()
+            {
+                Primary = "#6418C3",
+                Secondary = "#5ECFFF",
+                Info = "#001f3f",
+                Success = "#38E25D",
+                Warning = "#FFAB2D",
+                Error = "#FF4A55",
+                AppbarBackground = "#FFFFFF",
+                Dark = "#211E34",
+                Black = "#000000" 
+            }
+        };
+}

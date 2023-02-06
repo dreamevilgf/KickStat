@@ -1,0 +1,85 @@
+﻿@page "/login"
+@using KickStat.App.Framework.KickStatApi
+@using KickStat.Models
+@inject KickStatAuthApiClient AuthApiClient
+@inject NavigationManager NavigationManager;
+
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid Class="mt-4" Justify="Justify.Center">
+        <MudItem Style="Width: 500px;">
+            <MudCard>
+                <MudCardHeader Class="pb-0 text-center">
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h4">Войти</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField Label="Email" @bind-Value="model.Login" For="() => model.Login"/>
+                    <MudTextField Label="Пароль" @bind-Value="model.Password" For="() => model.Password" InputType="InputType.Password" Class="mt-3"/>
+                </MudCardContent>
+
+                @if (errors.Any())
+                {
+                    <MudCardContent>
+                        @foreach (var error in errors)
+                        {
+                            <MudText Color="@Color.Error">
+                                @error
+                            </MudText>
+                        }
+                    </MudCardContent>
+                }
+
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" Disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        }
+                        else
+                        {
+                            <MudText>Войти</MudText>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    private LoginRequest model = new();
+    private bool isLoading = false;
+    List<string?> errors = new();
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        isLoading = true;
+        errors = new();
+
+
+        try
+        {
+            var result = await AuthApiClient.Token(model.Login, model.Password);
+            
+            StateHasChanged();
+            NavigationManager.NavigateTo("/");
+
+        }
+        catch (Exception e)
+        {
+            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+
+
+
+    }
+}

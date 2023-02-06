@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\KickStat.Core\KickStat.Core.csproj" />
+      <ProjectReference Include="..\KickStat.Data.Core\KickStat.Data.Core.csproj" />
+      <ProjectReference Include="..\KickStat.Data.Main\KickStat.Data.Main.csproj" />
+    </ItemGroup>
+
+</Project>

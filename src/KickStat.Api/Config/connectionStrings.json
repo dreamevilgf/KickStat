@@ -1,0 +1,5 @@
+﻿{
+  "ConnectionStrings": {
+    "KickStat": "Server=localhost;Port=5432;Database=kick_stat;User ID=foot_stat_user;Password=cq112##1DS"
+  }
+}

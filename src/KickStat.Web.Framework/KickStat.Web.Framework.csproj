@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>KickStat</RootNamespace>
+
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version>1.0.0</Version>
+        <PackageId>KickStat.Web.Framework</PackageId>
+
+        <AssemblyTitle>KickStat applications web framework package</AssemblyTitle>
+        <Authors>KickStat</Authors>
+        <Company>KickStat</Company>
+        <Copyright>KickStat 2023</Copyright>
+        <Description>KickStat applications web framework package</Description>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <NoWarn>CS1591</NoWarn>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <ProjectReference Include="..\KickStat.Core\KickStat.Core.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,5 @@
+{
+  "kickStatAPI": {
+    "baseUrl": "api.kickstat.ru" // Базовый URL до API
+  }
+}
