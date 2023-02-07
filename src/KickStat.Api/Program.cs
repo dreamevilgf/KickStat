@@ -11,6 +11,7 @@ using System.IO.Compression;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using KickStat.Data.Domain.Identity;
+using KickStat.Services;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -89,6 +90,10 @@ builder.Services.AddControllers()
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<EventDetailService>();
+builder.Services.AddScoped<GameEventService>();
+builder.Services.AddScoped<PlayerService>();
 
 // Какие то проблемы в net.core 6 с Datetime у Npgsql, все время пытается привести тип к Timestamp with zone, хотя в бд явно указано without
 // На stackoverflow сказали использовать такую настройку

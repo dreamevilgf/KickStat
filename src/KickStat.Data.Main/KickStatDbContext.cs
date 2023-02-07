@@ -13,8 +13,12 @@ public partial class KickStatDbContext : IdentityDbContext<KickStatUser, KickSta
     IdentityRoleClaim<Guid>, KickStatUserToken>
 {
     public DbSet<AppSetting> AppSettings { get; set; } = null!;
-    public DbSet<UserProfile> UserProfiles { get; set; } = null!;
+    public DbSet<EventDetail> EventDetails { get; set; } = null!;
+    public DbSet<Game> Games { get; set; } = null!;
+    public DbSet<GameEvent> GameEvents { get; set; } = null!;
     public DbSet<Player> Players { get; set; } = null!;
+    public DbSet<UserProfile> UserProfiles { get; set; } = null!;
+
 
 
     private readonly string? _connectionString;
