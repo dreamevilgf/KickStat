@@ -1,4 +1,4 @@
-﻿namespace KickStat.Models.Players;
+﻿namespace KickStat.Models.Games;
 
 public class GameListRequest
 {

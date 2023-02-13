@@ -1,0 +1,79 @@
+﻿@page "/games/{id:int?}"
+@using KickStat.Models.Games;
+@using KickStat.Models.Players;
+@attribute [Authorize]
+@inject KickStatGamesApiClient GameApiClient;
+@inject NavigationManager NavigationManager;
+@inject IJSRuntime JsRuntime
+
+<MudCard Class="mt-8">
+
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h5">@Model.Player?.FullName</MudText>
+            <MudText Typo="Typo.body1">
+                @Model.OpposingTeam
+                @if (!string.IsNullOrEmpty(Model.Competition))
+                {
+                    @("- {Model.Competition}")
+                  
+                }
+            </MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+    </MudCardContent>
+
+
+
+    <MudCardActions>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudSpacer />
+            <MudButton OnClick="GoBack" Color="Color.Secondary">Отменить</MudButton>
+            <MudButton Href="/games/edit" Color="Color.Primary">Редактировать</MudButton>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudButton OnClick="GoBack" Color="Color.Secondary" FullWidth="true">Отменить</MudButton>
+            <MudButton Href="/games/edit" FullWidth="true" Color="Color.Primary">Редактировать</MudButton>
+        </MudHidden>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsLoading = false;
+
+
+    private GameModel Model = new();
+    List<string?> errors = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        try
+        {
+
+            if (Id is null or < 1)
+                return;
+
+            IsLoading = true;
+            Model = await GameApiClient.Get(Id.Value);
+        }
+        catch (Exception e)
+        {
+            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await JsRuntime.InvokeVoidAsync("history.back");
+    }
+
+}

@@ -28,7 +28,7 @@ public class Game
     [Column("is_deleted")]
     public bool IsDeleted { get; set; }
 
-    [ForeignKey(nameof(PlayerId))] public Player Player { get; set; }
+    [ForeignKey(nameof(PlayerId))] public Player? Player { get; set; }
 
     public IList<GameEvent> Events { get; set; } = new List<GameEvent>();
 
@@ -43,9 +43,9 @@ public class GameMeta
 
     public int? Playtime { get; set; }
 
-    public int? MatchDuration { get; set; }
+    public int MatchDuration { get; set; }
 
     public string? Competition { get; set; }
 
-    public bool IsMainTeam { get; set; }
+    public bool IsMain { get; set; }
 }

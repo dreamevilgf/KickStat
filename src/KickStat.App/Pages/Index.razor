@@ -1,12 +1,78 @@
 ﻿@page "/"
+@using KickStat.Models.Games;
 @using Microsoft.AspNetCore.Authorization
+@using KickStat.App.Framework.KickStatApi
 @attribute [Authorize]
+@inject KickStatGamesApiClient GamesApiClient;
+
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, worldr7 d!</h1>
+<MudGrid Class="pt-8" Justify="Justify.Center">
+    <MudItem xs="12">
+        <MudButton Color="Color.Primary" Href="/games/edit">Создать</MudButton>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper>
+            <MudTable ServerData="@(new Func<TableState, Task<TableData<GameListModel>>>(ServerReload))" @ref="Table">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Игры</MudText>
+                    <MudSpacer />
+                    <MudTextField ValueChanged="@(OnSearch)" T="string" Placeholder="Поиск"
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>
+                        <MudTableSortLabel T="GameListModel">Соперник</MudTableSortLabel>
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="OpposingTeam"><MudLink Href="@($"games/{context.Id}")">@context.OpposingTeam</MudLink></MudTd>
+                </RowTemplate>
+                <NoRecordsContent>Ничего не удалось найти</NoRecordsContent>
+                <LoadingContent>Загрузка...</LoadingContent>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
 
-<div class="alert alert-warning" role="alert">
-    Before authentication will function correctly, you must configure your provider details in <code>Program.cs</code>
-</div>
+</MudGrid>
 
-Welcome to your new app.
+
+@code {
+    private GameListRequest Request = new();
+    private MudTable<GameListModel> Table;
+
+    private async Task<TableData<GameListModel>> ServerReload(TableState state)
+    {
+        try
+        {
+
+            Request.Sort.OrderBy = GameSortOptions.Id;
+            Request.Sort.IsAscending = true;
+
+
+            Request.Filter.Skip = state.Page * state.PageSize;
+            Request.Filter.Take = state.PageSize;
+
+            var result = await GamesApiClient.List(Request);
+
+            return new TableData<GameListModel>() { TotalItems = result.TotalCount ?? 0, Items = result.Result?.ToList() ?? new List<GameListModel>() };
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+        }
+
+        return new TableData<GameListModel>() { TotalItems = 0, Items = new List<GameListModel>() };
+    }
+
+    private void OnSearch(string text)
+    {
+        Request.Filter.Query = text;
+        Table.ReloadServerData();
+    }
+
+
+}

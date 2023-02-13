@@ -13,25 +13,24 @@ using System.Text.Json;
 using KickStat.Data.Domain.Identity;
 using KickStat.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 builder.Configuration
-    .AddJsonFile("Config/AppSettings.json", true, true)
-    .AddJsonFile("Config/ConnectionStrings.json", true, true);
+    .AddJsonFile("Config/appSettings.json", true, true)
+    .AddJsonFile("Config/connectionStrings.json", true, true);
 
 builder.Logging
     .ClearProviders()
     .SetMinimumLevel(LogLevel.Information)
-    .AddNLog("config/nlog.config");
-// Add services to the container.
+    .AddNLog("Config/nlog.config");
 
 builder.Services.AddMemoryCache();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 builder.Services.Configure<JwtAuthSettings>(builder.Configuration.GetSection("JwtAuthentication"));
 
 builder.Services.AddDbContext<KickStatDbContext>(opt =>
@@ -44,7 +43,7 @@ builder.Services.AddResponseCompression(options =>
         options.Providers.Add<GzipCompressionProvider>();
         options.EnableForHttps = true;
     }
-); 
+);
 builder.Services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Optimal; });
 builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Optimal; });
 
@@ -76,10 +75,22 @@ builder.Services.AddCors(x => x.AddPolicy("DebugPolicy", policyBuilder =>
     policyBuilder.AllowAnyMethod();
 }));
 
-builder.Services.AddControllers()
-    .AddMvcOptions(options => options.Filters.Add(new HandleAndLogErrorAttribute()))
-    .AddJsonOptions(options =>
+builder.Services.AddControllers(opt =>
     {
+        opt.Filters.Add<HttpResponseExceptionFilter>();
+    })
+    .ConfigureApiBehaviorOptions(opt =>
+    {
+        opt.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(context.ModelState)
+        {
+            ContentTypes =
+            {
+                "application/json",
+            }
+        };
+    })
+    .AddJsonOptions(options =>
+    {   
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -105,11 +116,9 @@ var app = builder.Build();
 app.UseResponseCompression();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

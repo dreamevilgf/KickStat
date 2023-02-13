@@ -5,6 +5,7 @@ using KickStat.Data;
 using KickStat.Data.Domain;
 using KickStat.Models;
 using KickStat.Models.GameEvents;
+using KickStat.Models.Games;
 using KickStat.Models.Players;
 using KickStat.Services;
 using KickStat.UI.SiteApi.Framework;
@@ -57,7 +58,7 @@ public class GamesController : ManagementApiController
             Id = x.Id,
             OpposingTeam = x.OpposingTeam,
             Date = x.Date,
-            Player = x.Player.FullName
+            Player = x.Player!.FullName
         }).ToListAsync();
 
         return new PagedResult<GameListModel>(result, totalCount, request.Filter.Skip, request.Filter.Take);
@@ -68,57 +69,37 @@ public class GamesController : ManagementApiController
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var events = await _eventDetailService.All();
-        var model = await _dbContext.Games.AsNoTracking()
+        var entity = await _dbContext.Games.AsNoTracking()
             .Where(x => x.Id == id && x.OwnerId == new Guid(userId) && !x.IsDeleted)
-            .Select(x => new GameModel()
+            .Select(x => new Game()
             {
                 Id = x.Id,
                 OpposingTeam = x.OpposingTeam,
                 PlayerId = x.PlayerId,
                 Date = x.Date,
+                Meta = x.Meta,
+                Player = new Player()
+                {
+                    Id = x.Player!.Id,
+                    FullName = x.Player!.FullName,
+                },
                 Events = x.Events.Any()
-                    ? x.Events.Select(y => new GameEventModel()
+                    ? x.Events.Select(y => new GameEvent()
                     {
                         Id = y.Id,
                         Value = y.Value,
                         GameId = y.GameId,
-                        EventDetail = new EventDetailModel()
-                        {
-                            Id = y.EventDetailId
-                        }
+                        EventDetailId = y.EventDetailId
                     }).ToList()
-                    : new List<GameEventModel>()
+                    : new List<GameEvent>()
             })
             .FirstOrDefaultAsync();
 
-        if (model.Events.Any())
-        {
-            foreach (var e in model.Events)
-            {
-                var eventDetail = events.FirstOrDefault(x => x.Id == e.EventDetail.Id);
-                if (eventDetail == null)
-                    continue;
+        if (entity == null)
+            throw new ApiException("Не удалось найти игру");
 
-                e.EventDetail.Title = eventDetail.Title;
-                e.EventDetail.Group = eventDetail.Group;
-                e.EventDetail.DisplayOrder = eventDetail.DisplayOrder;
-            }
-        }
-        else
-        {
-            foreach (var e in events)
-                model.Events.Add(new GameEventModel()
-                {
-                    EventDetail = new EventDetailModel
-                        {Id = e.Id, Group = e.Group, Title = e.Title, DisplayOrder = e.DisplayOrder}
-                });
-        }
-
-        model.Events = model.Events.OrderBy(x => x.EventDetail.DisplayOrder).ToList();
-
-
-        if (model == null)
-            throw new ApiException("Игра не найдена");
+        var model = new GameModel();
+        model.ToModel(entity, events);
 
         return model;
     }

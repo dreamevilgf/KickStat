@@ -9,9 +9,6 @@ namespace KickStat.UI.SiteApi.Framework;
 [ApiController]
 public abstract class ManagementApiController : ControllerBase, IAsyncActionFilter
 {
-    protected AppSettings AppSettingsConfig => _appSettingsConfig ??= HttpContext.RequestServices.GetRequiredService<IOptionsSnapshot<AppSettings>>().Value;
-    private AppSettings? _appSettingsConfig;
-
     protected ILogger Logger => _logger ??= (ILogger)HttpContext.RequestServices.GetRequiredService(typeof(ILogger<>).MakeGenericType(GetType())); // get current class logger
     private ILogger? _logger;
 

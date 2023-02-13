@@ -14,11 +14,10 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-var url = "https://localhost:7082";
+//var url = "https://localhost:7082";
 
-#if !DEBUG
-url = builder.Configuration.GetValue<string>("KickStatApi:baseUrl")!;
-#endif
+var url = builder.Configuration.GetValue<string>("KickStatApi:baseUrl")!;
+
 
 builder.Services.AddHttpClient<KickStatAuthApiClient>(client =>
 {
@@ -29,6 +28,15 @@ builder.Services.AddHttpClient<KickStatAuthApiClient>(client =>
 });
 
 builder.Services.AddHttpClient<KickStatPlayersApiClient>(client =>
+{
+    client.BaseAddress = new Uri(url);
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+});
+
+
+builder.Services.AddHttpClient<KickStatGamesApiClient>(client =>
 {
     client.BaseAddress = new Uri(url);
     client.DefaultRequestHeaders.Clear();
