@@ -1,77 +1,112 @@
 ﻿@page "/players"
-@using Microsoft.AspNetCore.Authorization
 @using KickStat.Models.Players
-@using KickStat.App.Framework.KickStatApi
 @attribute [Authorize]
 @inject KickStatPlayersApiClient PlayersApiClient
+@inject NavigationManager _NavigationManager;
 
-<MudGrid Class="pt-8" Justify="Justify.Center">
+<PageTitle>Игроки</PageTitle>
+
+<MudGrid Class="pt-8">
     <MudItem xs="12">
-        <MudButton Color="Color.Primary" Href="/players/edit">Создать</MudButton>
-    </MudItem>
-    <MudItem xs="12">
-        <MudPaper>
-            <MudTable ServerData="@(new Func<TableState, Task<TableData<PlayerModel>>>(ServerReload))" @ref="Table">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">Игроки</MudText>
-                    <MudSpacer/>
-                    <MudTextField ValueChanged="@(OnSearch)" T="string" Placeholder="Поиск"
-                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh>
-                        <MudTableSortLabel SortLabel="FullName" T="PlayerModel">ФИО</MudTableSortLabel>
-                    </MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="FullName">@context.FullName</MudTd>
-                </RowTemplate>
-                <NoRecordsContent>Ничего не удалось найти</NoRecordsContent>
-                <LoadingContent>Загрузка...</LoadingContent>
-                <PagerContent>
-                    <MudTablePager/>
-                </PagerContent>
-            </MudTable>
+        <MudPaper Class="d-flex" Elevation="0" Style="background:#F9F9F9">
+            <MudText Class="pt-3" Typo="Typo.h1">Игроки</MudText>
+            <MudSpacer/>
+            <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="true">
+                <MudTextField @bind-Value="Request.Filter.Query" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Class="kickstat-search mt-0"
+                              TextChanged="@(async () => await InitData(1))"
+                              Variant="Variant.Outlined">
+                </MudTextField>
+            </MudHidden>
+
+            <MudButton
+                Color="Color.Primary"
+                Href="/players/edit"
+                Variant="Variant.Filled"
+                DisableElevation="true"
+                Class="kickstat-btn ml-4">
+                Создать
+            </MudButton>
         </MudPaper>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+            <MudTextField @bind-Value="Request.Filter.Query" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="kickstat-search mt-4"
+                          TextChanged="() => InitData(1)"
+                          Variant="Variant.Outlined">
+            </MudTextField>
+        </MudHidden>
     </MudItem>
+
+    @if (IsLoading)
+    {
+        <Progress/>
+    }
+    else
+    {
+        foreach (var player in Players)
+        {
+            <MudItem xs="12" sm="12" md="3" lg="4">
+                <MudCard Class="kickstat-card cursor-pointer" Elevation="0" @onclick="() => GoToPlayer(player.Id)">
+                    <MudCardHeader>
+                        <MudPaper Class="d-flex flex-column" Elevation="0">
+                            <MudText Typo="Typo.h2" Class="mt-2">@(player.FullName)</MudText>
+                            <MudText Typo="Typo.subtitle1" Class="kickstat-text-secondary">Год рождения: @(player.BirthYear?.ToString() ?? "-") </MudText>
+                        </MudPaper>
+
+                    </MudCardHeader>
+                </MudCard>
+            </MudItem>
+        }
+    }
+
+
+    @if (TotalCount > 1)
+    {
+        <MudItem xs="12" Class="d-flex justify-center">
+            <MudPagination Rectangular="true" Variant="Variant.Text" Count="@(TotalCount)" SelectedChanged="InitData"></MudPagination>
+        </MudItem>
+    }
 
 </MudGrid>
 
 
 @code {
     private PlayerListRequest Request = new();
-    private MudTable<PlayerModel> Table;
+    private List<PlayerModel> Players = new();
+    private bool IsLoading;
+    private int TotalCount = 1;
+    private int PageSize = 20;
 
-    private async Task<TableData<PlayerModel>> ServerReload(TableState state)
+    protected override async Task OnInitializedAsync()
+    {
+        await InitData(1);
+    }
+
+    private async Task InitData(int page)
     {
         try
         {
-
-            Request.Sort.OrderBy = state.SortLabel == "FullName" ? PlayerSortOptions.FullName : PlayerSortOptions.Id;
-            if (Request.Sort.OrderBy != PlayerSortOptions.Id)
-                Request.Sort.IsAscending = state.SortDirection == SortDirection.Ascending;
-            else
-                Request.Sort.IsAscending = true;
-
-            Request.Filter.Skip = state.Page * state.PageSize;
-            Request.Filter.Take = state.PageSize;
-
+            IsLoading = true;
+            Request.Filter.Skip = (page - 1) * PageSize;
+            Request.Filter.Take = PageSize;
             var result = await PlayersApiClient.List(Request);
-
-            return new TableData<PlayerModel>() { TotalItems = result.TotalCount ?? 0, Items = result.Result?.ToList() ?? new List<PlayerModel>() };
+            Players = result.Result?.ToList() ?? new List<PlayerModel>();
+            result.TotalCount ??= 1;
+            TotalCount = result.TotalCount.Value / PageSize;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+            Console.WriteLine(e);
         }
-
-        return new TableData<PlayerModel>() { TotalItems = 0, Items = new List<PlayerModel>() };
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
-    private void OnSearch(string text)
+    private void GoToPlayer(int id)
     {
-        Request.Filter.Query = text;
-        Table.ReloadServerData();
+        _NavigationManager.NavigateTo($"/players/edit/{id}");
     }
 
 

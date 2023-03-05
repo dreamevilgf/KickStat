@@ -16,8 +16,11 @@ public class GameEvent
     [Column("event_detail_id")]
     public int EventDetailId { get; set; }
 
-    [Column("value")]
-    public int Value { get; set; }
+    [Column("positive_value")]
+    public int? PositiveValue { get; set; }
+    
+    [Column("negative_value")]
+    public int? NegativeValue { get; set; }
     
     [ForeignKey(nameof(GameId))]
     public Game? Game { get; set; }

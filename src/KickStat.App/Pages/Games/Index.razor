@@ -1,45 +1,76 @@
 ﻿@page "/games/{id:int?}"
 @using KickStat.Models.Games;
 @using KickStat.Models.Players;
+@using KickStat.Models.GameEvents
+@using MudBlazor.Services
 @attribute [Authorize]
 @inject KickStatGamesApiClient GameApiClient;
 @inject NavigationManager NavigationManager;
 @inject IJSRuntime JsRuntime
 
-<MudCard Class="mt-8">
+@if (IsLoading)
+{
+    <MudPaper MinHeight="600" Elevation="0">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true"/>
+    </MudPaper>
+}
+else
+{
+    <MudCard Class="mt-8 kickstat-card" Elevation="0">
 
-    <MudCardHeader>
-        <CardHeaderContent>
-            <MudText Typo="Typo.h5">@Model.Player?.FullName</MudText>
-            <MudText Typo="Typo.body1">
-                @Model.OpposingTeam
-                @if (!string.IsNullOrEmpty(Model.Competition))
-                {
-                    @("- {Model.Competition}")
-                  
-                }
-            </MudText>
-        </CardHeaderContent>
-    </MudCardHeader>
-    <MudCardContent>
-    </MudCardContent>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <div class="d-flex">
+                    <MudText Typo="Typo.caption" Class="kickstat-text-secondary">@Model.Date?.ToShortDateString()</MudText>
+                    <MudSpacer/>
+                    <MudButton Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Href="@($"games/edit/{Model.Id}")" Class="kickstat-btn">Редактировать</MudButton>
+                </div>
 
+                <MudText Typo="Typo.h1">@Model.Player.FullName</MudText>
+                <MudText Typo="Typo.subtitle1" Class="kickstat-text-secondary">@Model.OpposingTeam</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
 
+    </MudCard>
 
-    <MudCardActions>
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudSpacer />
-            <MudButton OnClick="GoBack" Color="Color.Secondary">Отменить</MudButton>
-            <MudButton Href="/games/edit" Color="Color.Primary">Редактировать</MudButton>
-        </MudHidden>
-        <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <MudButton OnClick="GoBack" Color="Color.Secondary" FullWidth="true">Отменить</MudButton>
-            <MudButton Href="/games/edit" FullWidth="true" Color="Color.Primary">Редактировать</MudButton>
-        </MudHidden>
-    </MudCardActions>
-</MudCard>
+    <MudGrid Class="pt-8">
+
+        @foreach (var e in Model.Events)
+        {
+            <MudItem Class="pt-0" xs="12" sm="12" md="4" lg="3">
+                <MudCard Class="kickstat-card" Elevation="0" Style="height: 275px" >
+
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h2">@e.Key</MudText>
+
+                            @foreach (var details in e.Value)
+                            {
+                                <MudText Typo="Typo.subtitle1">@details.LabelPositive</MudText>
+                                <div class="d-flex">
+                                    <MudText Typo="Typo.h6">@(GetTotalActions(details))</MudText>
+                                    @if (details.HasNegative)
+                                    {
+                                        <MudText Typo="Typo.h6" Color="Color.Error" Class="ml-2">@(details.NegativeValue.HasValue ? $"({details.NegativeValue.Value})" : "(0)")</MudText>
+                                        <MudSpacer/>
+                                        <MudText Typo="Typo.h6" Color="Color.Success">@($"{GetPercent(details)}%")</MudText>
+                                    }
+                                </div>
+                            }
+
+                        </CardHeaderContent>
+                    </MudCardHeader>
+
+                </MudCard>
+            </MudItem>
+        }
+
+    </MudGrid>
+}
+
 
 @code {
+
     [Parameter]
     public int? Id { get; set; }
 
@@ -51,15 +82,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         try
         {
-
             if (Id is null or < 1)
                 return;
 
             IsLoading = true;
-            Model = await GameApiClient.Get(Id.Value);
+            Model = await GameApiClient.GetStats(Id.Value);
         }
         catch (Exception e)
         {
@@ -69,6 +98,21 @@
         {
             IsLoading = false;
         }
+    }
+
+
+    private int GetTotalActions(GameEventModel gameEventModel)
+    {
+        if (!gameEventModel.HasNegative)
+            return gameEventModel.PositiveValue ?? 0;
+        else
+            return (gameEventModel.PositiveValue ?? 0) + (gameEventModel.NegativeValue ?? 0);
+    }
+
+    private int GetPercent(GameEventModel gameEventModel)
+    {
+        var totalCount = (gameEventModel.PositiveValue ?? 0) + (gameEventModel.NegativeValue ?? 0);
+        return totalCount > 0 ? (gameEventModel.PositiveValue ?? 0) * 100 / totalCount : 0;
     }
 
     private async Task GoBack()

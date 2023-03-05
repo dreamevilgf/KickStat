@@ -5,24 +5,32 @@ using KickStat.Models.Players;
 
 namespace KickStat.UI.SiteApi.Framework.Extensions.Model;
 
-public static class GameModelExtension
+public static class GameEditModelExtension
 {
-    public static void ToModel(this GameModel model, Game entity, List<EventDetail> eventDetails)
+    public static void ToEntity(this GameEditModel model, Game entity)
+    {
+        entity.Id = model.Id;
+        entity.PlayerId = model.PlayerId!.Value;
+        entity.Date = model.Date!.Value;
+        entity.OpposingTeam = model.OpposingTeam;
+        entity.CreatedDate = DateTime.Now;
+
+        entity.Meta.Playtime = model.Playtime;
+        entity.Meta.Competition = model.Competition;
+        entity.Meta.IsMain = model.IsMain;
+        entity.Meta.MatchDuration = model.MatchDuration;
+    }
+
+    public static void ToModel(this GameEditModel model, Game entity, List<EventDetail> eventDetails)
     {
         model.Id = entity.Id;
+        model.PlayerId = entity.PlayerId  == 0 ? null : entity.PlayerId;
         model.Date = entity.Date != DateTime.MinValue ? entity.Date : DateTime.Now;
         model.Competition = entity.Meta.Competition;
         model.Playtime = entity.Meta.Playtime;
         model.IsMain = entity.Meta.IsMain;
         model.OpposingTeam = entity.OpposingTeam;
-        model.MatchDuration = entity.Meta.MatchDuration == 0 ? entity.Meta.MatchDuration : 90;
-        model.Player = entity.Player != null
-            ? new PlayerModel()
-            {
-                Id = entity.Player.Id,
-                FullName = entity.Player.FullName
-            }
-            : null;
+        model.MatchDuration =  entity.Meta.MatchDuration == 0 ? 90 : entity.Meta.MatchDuration;
         model.Events = new Dictionary<string, List<GameEventModel>>();
 
         // Группируем игровые события

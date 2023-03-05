@@ -5,12 +5,15 @@ using KickStat.Models.Players;
 
 namespace KickStat.Models.Games;
 
-public class GameModel
+public class GameEditModel
 {
     public int Id { get; set; }
 
     [Required(ErrorMessage = "Необходимо указать команду соперника")]
     public string OpposingTeam { get; set; } = null!;
+
+    [Required(ErrorMessage = "Необходимо указать игрока")]
+    public int? PlayerId { get; set; }
 
     [Required(ErrorMessage = "Необходимо указать дату события")]
     public DateTime? Date { get; set; }
@@ -26,9 +29,6 @@ public class GameModel
     public int? Playtime { get; set; }
 
     public Dictionary<string, List<GameEventModel>> Events { get; set; } = new();
-
-    public PlayerModel Player { get; set; }
-
 
     [JsonIgnore]
     public bool IsNew => Id == 0;

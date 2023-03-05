@@ -30,7 +30,7 @@ public class Game
 
     [ForeignKey(nameof(PlayerId))] public Player? Player { get; set; }
 
-    public IList<GameEvent> Events { get; set; } = new List<GameEvent>();
+    public List<GameEvent> Events { get; set; } = new ();
 
     [Required] public Guid OwnerId { get; set; }
 

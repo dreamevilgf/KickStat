@@ -1,4 +1,5 @@
-﻿namespace KickStat.Models.GameEvents;
+﻿
+namespace KickStat.Models.GameEvents;
 
 public class EventDetailModel
 {
@@ -9,4 +10,6 @@ public class EventDetailModel
     public int DisplayOrder { get; set; }
     
     public string Group { get; set; }
+    
+
 }

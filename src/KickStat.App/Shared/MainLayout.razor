@@ -1,29 +1,31 @@
 ﻿@inherits LayoutComponentBase
+@inject KickStatAuthApiClient AuthApiClient
+@inject NavigationManager NavigationManager;
 
 
-
-<MudThemeProvider Theme="myTheme" />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<MudThemeProvider Theme="myTheme"/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
 
 <MudLayout Style="height: 100%">
     <MudAppBar Elevation="0">
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
 
-            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Dark" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())"
-            />
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Dark" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())"/>
         </MudHidden>
-        <MudImage Src="https://storage.yandexcloud.net/footstat/images/logo/icon.svg" Width="32" Height="32"></MudImage>
-        <MudText Color="Color.Dark" Typo="Typo.h6" Class="ml-2" Style="font-weight: bold">KickStat</MudText>
+        <MudImage Src="https://storage.yandexcloud.net/footstat/images/logo/icon.svg" Class="cursor-pointer" Width="32" Height="32" @onclick="GoHome"></MudImage>
+        <MudText Color="Color.Dark" Typo="Typo.h6" Class="ml-2 cursor-pointer" Style="font-weight: bold" @onclick="GoHome">KickStat</MudText>
         <MudSpacer/>
         <MudMenu Icon="fas fa-user-circle">
-            <MudMenuItem>Выйти</MudMenuItem>
+            <MudMenuItem OnClick="async () => await Logout()">Выйти</MudMenuItem>
         </MudMenu>
 
     </MudAppBar>
-    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Docked">
-        <NavMenu />
-    </MudDrawer>
+    <AuthorizeView >
+        <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Docked">
+            <NavMenu/>
+        </MudDrawer>
+    </AuthorizeView >
     <MudMainContent Style="background:#F9F9F9">
         <MudContainer MaxWidth="MaxWidth.Large">
             @Body
@@ -41,19 +43,75 @@
         _drawerOpen = !_drawerOpen;
     }
 
+    private async Task Logout()
+    {
+        await AuthApiClient.LogoutUser();
+    }
+
+    private void GoHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+
     private MudTheme myTheme = new()
+    {
+        Palette = new Palette()
         {
-            Palette = new Palette()
+            Primary = "#6418C3",
+            Secondary = "#A5A5A5",
+            Info = "#001f3f",
+            Success = "#38E25D",
+            Warning = "#FFAB2D",
+            Error = "#FF4A55",
+            AppbarBackground = "#FFFFFF",
+            Dark = "#211E34",
+            Black = "#000000",
+        },
+        Typography = new Typography()
+        {
+            Default = new Default()
             {
-                Primary = "#6418C3",
-                Secondary = "#5ECFFF",
-                Info = "#001f3f",
-                Success = "#38E25D",
-                Warning = "#FFAB2D",
-                Error = "#FF4A55",
-                AppbarBackground = "#FFFFFF",
-                Dark = "#211E34",
-                Black = "#000000" 
+                FontFamily = new[] {"Roboto", "Helvetica", "Arial", "sans-serif"},
+                FontSize = "0.875rem",
+                FontWeight = 400
+            },
+            Subtitle1 = new Subtitle1()
+            {
+                FontFamily = new[] {"Open Sans", "Roboto", "Helvetica", "sans-serif"},
+                FontSize = "0.875rem",
+                FontWeight = 400
+            },
+            H1 = new H1()
+            {
+                FontFamily = new[] {"Roboto", "Helvetica", "Arial", "sans-serif"},
+                FontSize = "2rem",
+                FontWeight = 700,
+            },
+            H2 = new H2()
+            {
+                FontFamily = new[] {"Roboto", "Helvetica", "Arial", "sans-serif"},
+                FontSize = "1.5rem",
+                FontWeight = 700,
+            },
+            H5 = new H5()
+            {
+                FontFamily = new[] {"Roboto", "Helvetica", "Arial", "sans-serif"},
+                FontSize = "1.125rem",
+                FontWeight = 700,
+            },
+            H6 = new H6()
+            {
+                FontFamily = new[] {"Roboto", "Helvetica", "Arial", "sans-serif"},
+                FontSize = "1.125rem",
+                FontWeight = 600,
+            },
+            Caption = new Caption()
+            {
+                FontFamily = new[] {"Roboto", "Helvetica", "Arial", "sans-serif"},
+                FontSize = "1rem",
+                FontWeight = 600,
             }
-        };
+        }
+    };
 }

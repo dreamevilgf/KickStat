@@ -6,8 +6,16 @@ public class GameEventModel
     
     public int GameId { get; set; }
     
-    public int Value { get; set; }
+    public int? PositiveValue { get; set; }
+
+    public int? NegativeValue { get; set; }
     
-    public EventDetailModel EventDetail { get; set; }
+    public int EventDetailId { get; set; }
+
+    public string LabelPositive { get; set; } = null!;
     
+    public string? LabelNegative { get; set; } = null!;
+    
+    public bool HasNegative { get; set; }
+
 }

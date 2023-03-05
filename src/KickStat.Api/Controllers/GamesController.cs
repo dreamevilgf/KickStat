@@ -1,12 +1,8 @@
 ﻿using System.Security.Claims;
-using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Vml.Office;
 using KickStat.Data;
 using KickStat.Data.Domain;
 using KickStat.Models;
-using KickStat.Models.GameEvents;
 using KickStat.Models.Games;
-using KickStat.Models.Players;
 using KickStat.Services;
 using KickStat.UI.SiteApi.Framework;
 using KickStat.UI.SiteApi.Framework.Extensions.Model;
@@ -38,7 +34,10 @@ public class GamesController : ManagementApiController
         var query = _dbContext.Games.AsNoTracking().Where(x => x.OwnerId == new Guid(userId) && !x.IsDeleted);
 
         if (!string.IsNullOrEmpty(request.Filter.Query))
-            query = query.Where(x => x.OpposingTeam == request.Filter.Query);
+        {
+            query = query.Where(x => EF.Functions.ILike(x.OpposingTeam, $"%{request.Filter.Query.Trim()}%")
+            || EF.Functions.ILike(x.Player.FullName, $"%{request.Filter.Query.Trim()}%"));
+        }
 
         if (request.Sort.OrderBy == GameSortOptions.Id)
             query = request.Sort.IsAscending ? query.OrderBy(x => x.Id) : query.OrderByDescending(x => x.Id);
@@ -64,11 +63,62 @@ public class GamesController : ManagementApiController
         return new PagedResult<GameListModel>(result, totalCount, request.Filter.Skip, request.Filter.Take);
     }
 
-    [HttpGet("{id}")]
-    public async Task<GameModel> Get(int id)
+    [HttpGet("{id:int}")]
+    public async Task<GameEditModel> Get(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var events = await _eventDetailService.All();
+
+        var eventDetails = await _eventDetailService.All();
+        var model = new GameEditModel();
+        if (id == 0)
+        {
+           model.ToModel(new Game(), eventDetails);
+           return model;
+        }
+        
+        var entity = await _dbContext.Games.AsNoTracking()
+            .Where(x => x.Id == id && x.OwnerId == new Guid(userId) && !x.IsDeleted)
+            .Select(x => new Game()
+            {
+                Id = x.Id,
+                OpposingTeam = x.OpposingTeam,
+                PlayerId = x.PlayerId,
+                Date = x.Date,
+                Meta = x.Meta,
+                Events = x.Events.Any()
+                    ? x.Events.Select(y => new GameEvent()
+                    {
+                        Id = y.Id,
+                        PositiveValue = y.PositiveValue,
+                        NegativeValue = y.NegativeValue,
+                        GameId = y.GameId,
+                        EventDetailId = y.EventDetailId
+                    }).ToList()
+                    : new List<GameEvent>()
+            })
+            .FirstOrDefaultAsync();
+
+        if (entity == null)
+            throw new ApiException("Не удалось найти игру");
+
+        model.ToModel(entity, eventDetails);
+
+        return model;
+    }
+    
+    [HttpGet("{id:int}/stats")]
+    public async Task<GameModel> Stats(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        var eventDetails = await _eventDetailService.All();
+        var model = new GameModel();
+        if (id == 0)
+        {
+            model.ToModel(new Game(), eventDetails);
+            return model;
+        }
+        
         var entity = await _dbContext.Games.AsNoTracking()
             .Where(x => x.Id == id && x.OwnerId == new Guid(userId) && !x.IsDeleted)
             .Select(x => new Game()
@@ -87,7 +137,8 @@ public class GamesController : ManagementApiController
                     ? x.Events.Select(y => new GameEvent()
                     {
                         Id = y.Id,
-                        Value = y.Value,
+                        PositiveValue = y.PositiveValue,
+                        NegativeValue = y.NegativeValue,
                         GameId = y.GameId,
                         EventDetailId = y.EventDetailId
                     }).ToList()
@@ -98,14 +149,13 @@ public class GamesController : ManagementApiController
         if (entity == null)
             throw new ApiException("Не удалось найти игру");
 
-        var model = new GameModel();
-        model.ToModel(entity, events);
+        model.ToModel(entity, eventDetails);
 
         return model;
     }
 
     [HttpPost("save")]
-    public async Task<GameModel> Save(GameModel model)
+    public async Task<GameEditModel> Save(GameEditModel model)
     {
         Game? entity;
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -114,8 +164,7 @@ public class GamesController : ManagementApiController
             entity = new Game();
         else
         {
-            entity = await _dbContext.Games
-                .Include(x => x.Events)
+            entity = await _dbContext.Games.Include(x => x.Events)
                 .FirstOrDefaultAsync(x => x.Id == model.Id && x.OwnerId == new Guid(userId) && !x.IsDeleted);
             if (entity == null)
                 throw new ApiException("Игра не найдена");
@@ -124,9 +173,30 @@ public class GamesController : ManagementApiController
         model.ToEntity(entity);
         entity.OwnerId = new Guid(userId);
         if (model.IsNew)
+        {
+            entity.Events.AddRange(model.Events.SelectMany(x => x.Value).Select(x => new GameEvent()
+            {
+                EventDetailId = x.EventDetailId,
+                NegativeValue = x.NegativeValue,
+                PositiveValue = x.PositiveValue,
+            }).ToList());
             _dbContext.Games.Add(entity);
+        }
+
         else
+        {
+            entity.Events.Clear();
+            entity.Events.AddRange(model.Events.SelectMany(x => x.Value).Select(x => new GameEvent()
+            {
+                EventDetailId = x.EventDetailId,
+                GameId = x.GameId,
+                NegativeValue = x.NegativeValue,
+                PositiveValue = x.PositiveValue,
+            }));
             _dbContext.Games.Update(entity);
+            _dbContext.Entry(entity).Property(x => x.Meta).IsModified = true;
+        }
+
 
         await _dbContext.SaveChangesAsync();
 

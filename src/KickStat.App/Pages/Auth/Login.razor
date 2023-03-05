@@ -64,14 +64,13 @@
         try
         {
             var result = await AuthApiClient.Token(model.Login, model.Password);
-            
-            StateHasChanged();
             NavigationManager.NavigateTo("/");
 
         }
         catch (Exception e)
         {
-            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+            errors.Add(e.Message);
+           // errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
         }
         finally
         {

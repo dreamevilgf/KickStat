@@ -20,4 +20,7 @@ public class EventDetail
     
     [Column("group")]
     public string Group { get; set; }
+    
+    [Column("has_negative")]
+    public bool HasNegative { get; set; }
 }

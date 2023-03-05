@@ -33,6 +33,20 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<JwtAuthSettings>(builder.Configuration.GetSection("JwtAuthentication"));
 
+
+#if DEBUG
+ILoggerFactory myLoggerFactory = LoggerFactory.Create(c => c
+    .AddFilter((category, level) => category == DbLoggerCategory.Database.Command.Name && level == LogLevel.Information)
+    .AddConsole()
+);
+builder.Services.AddDbContext<KickStatDbContext>(opt =>
+    opt.UseLoggerFactory(myLoggerFactory)
+    .UseNpgsql(builder.Configuration.GetConnectionString("KickStat")));
+#else
+builder.Services.AddDbContext<KickStatDbContext>(opt =>
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("KickStat")));
+#endif
+
 builder.Services.AddDbContext<KickStatDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("KickStat")));
 builder.Services.AddKickStatIdentity();

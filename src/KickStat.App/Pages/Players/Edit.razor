@@ -1,78 +1,82 @@
 ﻿@page "/players/edit/{id:int?}"
-@using Microsoft.AspNetCore.Authorization
 @using KickStat.Models.Players
-@using KickStat.App.Framework.KickStatApi
 @attribute [Authorize]
 @inject KickStatPlayersApiClient PlayersApiClient
 @inject NavigationManager NavigationManager;
 @inject IJSRuntime JsRuntime
 
-<MudCard Class="mt-8">
-    <EditForm Model="@EditingItem" OnValidSubmit="OnValidSubmit">
-        <DataAnnotationsValidator />
-        <MudCardContent>
-
-            <MudGrid Justify="Justify.Center">
-
-                <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="EditingItem.FullName" For="() => EditingItem.FullName" Label="ФИО" />
-                </MudItem>
-
-                <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="EditingItem.BirthYear" For="() => EditingItem.BirthYear" InputType="InputType.Number" Label="Год рождения" />
-                </MudItem>
-
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="EditingItem.Description" For="() => EditingItem.Description" Label="Описание" />
-                </MudItem>
-            </MudGrid>
-        </MudCardContent>
-
-
-        @if (errors.Any())
-        {
+@if (IsLoading)
+{
+    <Progress/>
+}
+else
+{
+    <MudCard Class="mt-8  kickstat-card" Elevation="0">
+        <EditForm Model="@EditingItem" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator/>
             <MudCardContent>
-                @foreach (var error in errors)
-                {
-                    <MudText Color="@Color.Error">
-                        @error
-                    </MudText>
-                }
-            </MudCardContent>
-        }
-      
+                <MudGrid Justify="Justify.Center">
 
-        <MudCardActions>
-            <MudHidden  Breakpoint="Breakpoint.SmAndDown">
-                <MudSpacer />
-                <MudButton OnClick="GoBack" Color="Color.Secondary">Отменить</MudButton>
-                <MudButton ButtonType="ButtonType.Submit" Disabled="@(IsSaving || IsLoading)" Color="Color.Primary">
-                    @if (IsSaving)
+                    <MudItem xs="12" md="6">
+                        <div class="kickstat-label">ФИО</div>
+                        <MudTextField @bind-Value="EditingItem.FullName" For="() => EditingItem.FullName" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <div class="kickstat-label">Год рождения</div>
+                        <MudTextField @bind-Value="EditingItem.BirthYear" For="() => EditingItem.BirthYear" InputType="InputType.Number" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <div class="kickstat-label">Описание</div>
+                        <MudTextField @bind-Value="EditingItem.Description" For="() => EditingItem.Description" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            
+            @if (Errors.Any())
+            {
+                <MudCardContent>
+                    @foreach (var error in Errors)
                     {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Color="@Color.Error">
+                            @error
+                        </MudText>
                     }
-                    else
-                    {
-                        <MudText>Сохранить</MudText>
-                    }
-                </MudButton>
-            </MudHidden>
-            <MudHidden Breakpoint="Breakpoint.MdAndUp">
-                <MudButton OnClick="GoBack" Color="Color.Secondary" FullWidth="true">Отменить</MudButton>
-                <MudButton ButtonType="ButtonType.Submit" Disabled="@(IsSaving || IsLoading)" FullWidth="true" Color="Color.Primary">
-                    @if (IsSaving)
-                    {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                    }
-                    else
-                    {
-                        <MudText>Сохранить</MudText>
-                    }
-                </MudButton>
-            </MudHidden>
-        </MudCardActions>
-    </EditForm>
-</MudCard>
+                </MudCardContent>
+            }
+            
+            <MudCardActions>
+                <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                    <MudSpacer/>
+                    <MudButton OnClick="GoBack" Color="Color.Secondary" Class="kickstat-btn" Variant="Variant.Filled" DisableElevation="true">Отменить</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" Disabled="@(IsSaving || IsLoading)" Class="kickstat-btn ml-2" Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">
+                        @if (IsSaving)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        }
+                        else
+                        {
+                            <MudText>Сохранить</MudText>
+                        }
+                    </MudButton>
+                </MudHidden>
+                <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                        <MudButton ButtonType="ButtonType.Submit" Disabled="@(IsSaving || IsLoading)" FullWidth="true" Class="kickstat-btn  mt-4" Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">
+                            @if (IsSaving)
+                            {
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            }
+                            else
+                            {
+                                <MudText>Сохранить</MudText>
+                            }
+                        </MudButton>
+                </MudHidden>
+            </MudCardActions>
+        </EditForm>
+    </MudCard>
+}
 
 
 @code {
@@ -80,16 +84,16 @@
     [Parameter]
     public int? Id { get; set; }
 
-    private bool IsLoading = false;
+    private bool IsLoading;
 
-    private bool IsSaving = false;
+    private bool IsSaving;
 
-    private PlayerModel EditingItem  = new();
-    List<string?> errors = new();
+    private PlayerModel EditingItem = new();
+    List<string?> Errors = new();
 
     protected override async Task OnInitializedAsync()
     {
-        if (Id is null or <= 1)
+        if (Id is null or <= 0)
             return;
 
         try
@@ -99,7 +103,7 @@
         }
         catch (Exception e)
         {
-            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+            Errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
         }
         finally
         {
@@ -117,13 +121,12 @@
         }
         catch (Exception e)
         {
-            errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
+            Errors.Add(e.Data.Contains("error") ? e.Data["error"] as string : "Произошла ошибка, попробуйте позже");
         }
         finally
         {
             IsSaving = false;
         }
-
     }
 
     private async Task GoBack()

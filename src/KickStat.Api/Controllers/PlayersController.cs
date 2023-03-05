@@ -35,8 +35,8 @@ public class PlayersController : ManagementApiController
 
         var query = _dbContext.Players.AsNoTracking().Where(x => x.OwnerId == new Guid(userId) && !x.IsDeleted);
 
-        if (!string.IsNullOrEmpty(request.Filter.Query))
-            query = query.Where(x => x.FullName == request.Filter.Query);
+        if (!string.IsNullOrEmpty(request.Filter.Query?.Trim()))
+            query = query.Where(x => EF.Functions.ILike(x.FullName, $"%{request.Filter.Query.Trim()}%"));
 
         if (request.Sort.OrderBy == PlayerSortOptions.Id)
             query = request.Sort.IsAscending ? query.OrderBy(x => x.Id) : query.OrderByDescending(x => x.Id);
@@ -54,7 +54,8 @@ public class PlayersController : ManagementApiController
         var result = await query.Select(x => new PlayerModel()
         {
             Id = x.Id,
-            FullName = x.FullName
+            FullName = x.FullName,
+            BirthYear = x.BirthYear
         }).ToListAsync();
 
         return new PagedResult<PlayerModel>(result, totalCount, request.Filter.Skip, request.Filter.Take);
